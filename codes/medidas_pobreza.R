@@ -128,7 +128,7 @@ ggsave(graph_media_brasil,
        units = 'cm')
 
 # 2.2. FGT pobreza monetária Banco Mundial -------------------------------------
-fgt_bm_sergipe <- fgt(base = base_pnad_sergipe, linha = 180,local = 'Sergipe')
+fgt_bm_sergipe <- fgt(base = base_pnad_sergipe, linha = 293.0085,local = 'Sergipe')
 
 graph_bm_sergipe <- fgt_bm_sergipe %>% 
 ggplot2::ggplot(mapping = aes(x=medida, y=valor, fill= medida)) +
@@ -136,7 +136,7 @@ ggplot2::ggplot(mapping = aes(x=medida, y=valor, fill= medida)) +
   scale_fill_manual(values = c("#cf3a36", "#FAD510","#5c66a8",
                                 "#F8AFA8","#0B775E", "#E2D200"))+
   labs(y = 'Valor da medida', x='', 
-       title = 'Medidas FGT com linha de pobreza monetária (Banco Mundial USD$3.20)') +
+       title = 'Medidas FGT com linha de pobreza monetária (Banco Mundial USD$1.9)') +
   theme_minimal() +
   geom_text(aes(label= format(round(valor,3), nsmall=3)), position=position_dodge(width=0.9), vjust=-0.25)
 
@@ -145,7 +145,7 @@ ggsave(graph_bm_sergipe,
        width = 25, height = 15, device = 'png', bg = 'white',
        units = 'cm')
 
-fgt_bm_brasil <- fgt(base = base_pnad_brasil, linha = 180,local = 'Brasil') %>% 
+fgt_bm_brasil <- fgt(base = base_pnad_brasil, linha = 293.0085,local = 'Brasil') %>% 
   dplyr::bind_rows(fgt_bm_sergipe)
 
 graph_bm_brasil <- fgt_bm_brasil %>% 
@@ -153,7 +153,7 @@ graph_bm_brasil <- fgt_bm_brasil %>%
   geom_bar(stat = 'identity', position = 'dodge') + 
   scale_fill_manual(values = c("#F8AFA8", "#E2D200","#0B775E"))+
   labs(y = 'Valor da medida', x='', fill = '',
-       title = 'Medidas FGT com linha de pobreza monetária (Banco Mundial USD$3.20)') +
+       title = 'Medidas FGT com linha de pobreza monetária (Banco Mundial USD$1.9)') +
   theme_minimal() +
   geom_text(aes(label= format(round(valor,3), nsmall=3)), position=position_dodge(width=0.9), vjust=-0.25)
 
@@ -166,13 +166,13 @@ ggsave(graph_bm_brasil,
 fgt_branco_sergipe <- base_pnad_sergipe %>% 
   as_survey(.) %>% 
   dplyr::filter(v2010==1) %>% 
-  fgt(base = ., linha = 180,local = 'Sergipe') %>% 
+  fgt(base = ., linha = 293.0085,local = 'Sergipe') %>% 
   dplyr::mutate(var = 'Branco')
 
 fgt_nbranco_sergipe <- base_pnad_sergipe %>% 
   as_survey(.) %>% 
   dplyr::filter(v2010 !=1) %>% 
-  fgt(base = ., linha = 180,local = 'Sergipe')%>% 
+  fgt(base = ., linha = 293.0085,local = 'Sergipe')%>% 
   dplyr::mutate(var = 'Não Branco')
 
 graph_cor_sergipe <- fgt_branco_sergipe %>% 
@@ -181,7 +181,7 @@ graph_cor_sergipe <- fgt_branco_sergipe %>%
   geom_bar(stat = 'identity', position = 'dodge') + 
   scale_fill_manual(values = c("#FAD510","#cf3a36"))+
   labs(y = 'Valor da medida', x='', fill = '',
-       title = 'Medidas FGT para Sergipe por Raça/Cor (Banco Mundial USD$3.20)') +
+       title = 'Medidas FGT para Sergipe por Raça/Cor (Banco Mundial USD$1.9)') +
   theme_minimal() +
   geom_text(aes(label= format(round(valor,3), nsmall=3)), position=position_dodge(width=0.9), vjust=-0.25)
 
@@ -194,13 +194,13 @@ ggsave(graph_cor_sergipe,
 fgt_sabeler_sergipe <- base_pnad_sergipe %>% 
   as_survey(.) %>% 
   dplyr::filter(v3001== 1) %>% 
-  fgt(base = ., linha = 180,local = 'Sergipe') %>% 
+  fgt(base = ., linha = 293.0085,local = 'Sergipe') %>% 
   dplyr::mutate(var = 'Sabe Ler')
 
 fgt_nsabeler_sergipe <- base_pnad_sergipe %>% 
   as_survey(.) %>% 
   dplyr::filter(v3001 == 2) %>% 
-  fgt(base = ., linha = 180,local = 'Sergipe')%>% 
+  fgt(base = ., linha = 293.0085,local = 'Sergipe')%>% 
   dplyr::mutate(var = 'Não Sabe Ler')
 
 graph_ler_sergipe <- fgt_sabeler_sergipe %>% 
@@ -209,7 +209,7 @@ graph_ler_sergipe <- fgt_sabeler_sergipe %>%
   geom_bar(stat = 'identity', position = 'dodge') + 
   scale_fill_manual(values = c("#FAD510","#cf3a36"))+
   labs(y = 'Valor da medida', x='', fill = '',
-       title = 'Medidas FGT para Sergipe por Escolaridade (Banco Mundial USD$3.20)') +
+       title = 'Medidas FGT para Sergipe por Escolaridade (Banco Mundial USD$1.9)') +
   theme_minimal() +
   geom_text(aes(label= format(round(valor,3), nsmall=3)), position=position_dodge(width=0.9), vjust=-0.25)
 
@@ -223,13 +223,13 @@ ggsave(graph_ler_sergipe,
 fgt_homem_sergipe <- base_pnad_sergipe %>% 
   as_survey(.) %>% 
   dplyr::filter(v2007== 1 & v2005 == 1) %>% 
-  fgt(base = ., linha = 180,local = 'Sergipe') %>% 
+  fgt(base = ., linha = 293.0085,local = 'Sergipe') %>% 
   dplyr::mutate(var = 'Homem')
 
 fgt_mulher_sergipe <- base_pnad_sergipe %>% 
   as_survey(.) %>% 
   dplyr::filter(v2007== 2 & v2005 == 1) %>% 
-  fgt(base = ., linha = 180,local = 'Sergipe')%>% 
+  fgt(base = ., linha = 293.0085,local = 'Sergipe')%>% 
   dplyr::mutate(var = 'Mulher')
 
 graph_sexo_sergipe <- fgt_homem_sergipe %>% 
@@ -238,7 +238,7 @@ graph_sexo_sergipe <- fgt_homem_sergipe %>%
   geom_bar(stat = 'identity', position = 'dodge') + 
   scale_fill_manual(values = c("#FAD510","#cf3a36"))+
   labs(y = 'Valor da medida', x='', fill = '',
-       title = 'Medidas FGT para Sergipe por Sexo do Responsável (Banco Mundial USD$3.20)') +
+       title = 'Medidas FGT para Sergipe por Sexo do Responsável (Banco Mundial USD$1.9)') +
   theme_minimal() +
   geom_text(aes(label= format(round(valor,3), nsmall=3)), position=position_dodge(width=0.9), vjust=-0.25)
 
