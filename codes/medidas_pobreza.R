@@ -1,6 +1,6 @@
 # Trabalho Distribuição de Renda-------------------------------------
 # Este código limpa a PNAD de 2018 e prepara um painel para construção 
-# do trabalho de DDP
+# do trabalho de DRDP
 
 # 0. Configuração---------------------------------------
 
