@@ -1,6 +1,6 @@
 # Trabalho Distribuição de Renda-------------------------------------
 # Este código limpa a PNAD de 2018 e prepara um painel para construção 
-# do trabalho de DRDP
+# do trabalho de DDP
 
 # 0. Configuração---------------------------------------
 
@@ -163,11 +163,89 @@ ggsave(graph_bm_brasil,
        units = 'cm')
 
 # 2.3. FGT pobreza monetária Banco Mundial - Raça ------------------------------
+fgt_branco_sergipe <- base_pnad_sergipe %>% 
+  as_survey(.) %>% 
+  dplyr::filter(v2010==1) %>% 
+  fgt(base = ., linha = 180,local = 'Sergipe') %>% 
+  dplyr::mutate(var = 'Branco')
+
+fgt_nbranco_sergipe <- base_pnad_sergipe %>% 
+  as_survey(.) %>% 
+  dplyr::filter(v2010 !=1) %>% 
+  fgt(base = ., linha = 180,local = 'Sergipe')%>% 
+  dplyr::mutate(var = 'Não Branco')
+
+graph_cor_sergipe <- fgt_branco_sergipe %>% 
+  dplyr::bind_rows(fgt_nbranco_sergipe) %>% 
+  ggplot2::ggplot(mapping = aes(x=medida, y=valor, fill= var)) +
+  geom_bar(stat = 'identity', position = 'dodge') + 
+  scale_fill_manual(values = c("#FAD510","#cf3a36"))+
+  labs(y = 'Valor da medida', x='', fill = '',
+       title = 'Medidas FGT para Sergipe por Raça/Cor (Banco Mundial USD$3.20)') +
+  theme_minimal() +
+  geom_text(aes(label= format(round(valor,3), nsmall=3)), position=position_dodge(width=0.9), vjust=-0.25)
+
+ggsave(graph_cor_sergipe,
+       filename = 'Distribuição de Renda/Trabalho/output/fgt_cor_sergipe.png',
+       width = 25, height = 15, device = 'png', bg = 'white',
+       units = 'cm')
 
 # 2.4. FGT pobreza monetária Banco Mundial - Escolaridade ----------------------
+fgt_sabeler_sergipe <- base_pnad_sergipe %>% 
+  as_survey(.) %>% 
+  dplyr::filter(v3001== 1) %>% 
+  fgt(base = ., linha = 180,local = 'Sergipe') %>% 
+  dplyr::mutate(var = 'Sabe Ler')
+
+fgt_nsabeler_sergipe <- base_pnad_sergipe %>% 
+  as_survey(.) %>% 
+  dplyr::filter(v3001 == 2) %>% 
+  fgt(base = ., linha = 180,local = 'Sergipe')%>% 
+  dplyr::mutate(var = 'Não Sabe Ler')
+
+graph_ler_sergipe <- fgt_sabeler_sergipe %>% 
+  dplyr::bind_rows(fgt_nsabeler_sergipe) %>% 
+  ggplot2::ggplot(mapping = aes(x=medida, y=valor, fill= var)) +
+  geom_bar(stat = 'identity', position = 'dodge') + 
+  scale_fill_manual(values = c("#FAD510","#cf3a36"))+
+  labs(y = 'Valor da medida', x='', fill = '',
+       title = 'Medidas FGT para Sergipe por Escolaridade (Banco Mundial USD$3.20)') +
+  theme_minimal() +
+  geom_text(aes(label= format(round(valor,3), nsmall=3)), position=position_dodge(width=0.9), vjust=-0.25)
+
+ggsave(graph_ler_sergipe,
+       filename = 'Distribuição de Renda/Trabalho/output/fgt_ler_sergipe.png',
+       width = 25, height = 15, device = 'png', bg = 'white',
+       units = 'cm')
+
 
 # 2.5. FGT pobreza monetária Banco Mundial - Sexo ------------------------------
+fgt_homem_sergipe <- base_pnad_sergipe %>% 
+  as_survey(.) %>% 
+  dplyr::filter(v2007== 1 & v2005 == 1) %>% 
+  fgt(base = ., linha = 180,local = 'Sergipe') %>% 
+  dplyr::mutate(var = 'Homem')
 
+fgt_mulher_sergipe <- base_pnad_sergipe %>% 
+  as_survey(.) %>% 
+  dplyr::filter(v2007== 2 & v2005 == 1) %>% 
+  fgt(base = ., linha = 180,local = 'Sergipe')%>% 
+  dplyr::mutate(var = 'Mulher')
+
+graph_sexo_sergipe <- fgt_homem_sergipe %>% 
+  dplyr::bind_rows(fgt_mulher_sergipe) %>% 
+  ggplot2::ggplot(mapping = aes(x=medida, y=valor, fill= var)) +
+  geom_bar(stat = 'identity', position = 'dodge') + 
+  scale_fill_manual(values = c("#FAD510","#cf3a36"))+
+  labs(y = 'Valor da medida', x='', fill = '',
+       title = 'Medidas FGT para Sergipe por Sexo do Responsável (Banco Mundial USD$3.20)') +
+  theme_minimal() +
+  geom_text(aes(label= format(round(valor,3), nsmall=3)), position=position_dodge(width=0.9), vjust=-0.25)
+
+ggsave(graph_sexo_sergipe,
+       filename = 'Distribuição de Renda/Trabalho/output/fgt_sexo_sergipe.png',
+       width = 25, height = 15, device = 'png', bg = 'white',
+       units = 'cm')
 
 # 3. Pobreza: Dinâmica da Pobreza ----------------------------------------------
 
