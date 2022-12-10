@@ -300,9 +300,9 @@ dinamica <-  base_sergipe_longa %>%
   distinct(classe, nn) %>% 
   ggplot(mapping = aes(x = classe, y = nn, fill = classe))+
   geom_bar(stat = 'identity')+
-  scale_fill_manual(values = c("#FAD510","#cf3a36", "#F8AFA8", "#E2D200","#0B775E"))+
+  scale_fill_manual(values = c("#FAD510","#cf3a36", "#F8AFA8", "#5c66a8","#0B775E"))+
   labs(y = 'Quantidade de Domicílios', x='', fill = '',
-       title = 'Categorização da Dinâmica da Pobreza\n (Renda Per capita Média da População\n de Sergipe em reais de 2018Q4)') +
+       title = 'Categorização da Dinâmica da Pobreza\n (Renda Per capita Média da População de Sergipe em reais de 2018Q4)') +
   theme_minimal()
 
 ggsave(dinamica,
