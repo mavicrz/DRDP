@@ -8,13 +8,36 @@ rm(list=ls())
 gc()
 
 # Bibliotecas
-xfun::pkg_attach(c('tidyverse','purrr','haven','survey', 'srvyr','convey'), install=T)
+xfun::pkg_attach(c('tidyverse','purrr','haven','survey', 'srvyr','convey', 'PNADcIBGE'), install=T)
 
 # Input
 pnad_2018 <- 'Distribuição de Renda/Trabalho/input/PNADC2018/PNADC2018.dta'
+deflator <- readr::read_csv('Distribuição de Renda/Trabalho/input/deflator.csv') %>% 
+  dplyr::mutate(trimestre = as.character(trimestre))
+## 1.1 Base Pacote IBGE ---------------------------------------------------------
 
+func_ibge <- function(trimestre){get_pnadc(year = 2018,
+                                           quarter = trimestre,
+                                           defyear = 2018,
+                                           defperiod = 4,
+                                           deflator = T, 
+                                           design = F,
+                                           vars = c("UF",
+                                                    "Ano",
+                                                    "Trimestre"))}
 
-# 1. Bases ----------------------------------------------------------------------
+pnad <- purrr::map_df(.x = 1:4, .f = ~ func_ibge(trimestre = .x))
+
+pnad_sergipe_ibge <- pnad %>% 
+  tibble::as_tibble() %>% 
+  dplyr::filter(UF == 'Sergipe') %>% 
+  janitor::clean_names(.) %>% 
+  distinct(trimestre, efetivo, habitual)
+
+write_csv(pnad_sergipe_ibge, file = 'Distribuição de Renda/Trabalho/input/deflator.csv')
+
+## 1.2 Base PNAD 2018 ----------------------------------------------------------
+
 design_pnad_covid <- function(data) {
   
   pop <- data %>% # base auxiliar com projeções populacionais
@@ -33,13 +56,15 @@ base_pnad_sergipe <- haven::read_dta(file = pnad_2018) %>%
   tibble::as_tibble() %>% 
   dplyr::filter(UF == 28) %>% 
   janitor::clean_names(.) %>% 
+  dplyr::left_join(deflator, by = 'trimestre') %>% 
   dplyr::group_by(hous_id,trimestre,ano) %>%
   dplyr::mutate(renda_dom_mensal = mean(vd4020, na.rm = T),
                 membros = v2001,
-                renda_pc = (renda_dom_mensal/membros)) %>%
+                renda_pc = (renda_dom_mensal/membros),
+                renda_dom_mensal_def = mean(vd4020, na.rm = T)*efetivo,
+                renda_pc_def = (renda_dom_mensal_def/membros)) %>%
   dplyr::ungroup() %>% 
   design_pnad_covid()
-
 
 base_pnad_brasil <- haven::read_dta(file = pnad_2018) %>% 
   tibble::as_tibble() %>%  
@@ -248,6 +273,42 @@ ggsave(graph_sexo_sergipe,
        units = 'cm')
 
 # 3. Pobreza: Dinâmica da Pobreza ----------------------------------------------
+dom <- base_pnad_sergipe %>%
+  as_survey %>%
+  srvyr::as_tibble() %>%
+  distinct(hous_id,trimestre) %>% 
+  dplyr::add_count(hous_id) %>% 
+  dplyr::distinct(hous_id, n) %>% 
+  dplyr::filter(n ==4)
+
+base_sergipe_longa <- base_pnad_sergipe %>% 
+  as_survey %>%
+  srvyr::as_tibble() %>%
+  dplyr::right_join(dom, by = 'hous_id') %>%
+  dplyr::mutate(pobre  = case_when(renda_pc_def < 587 ~ 1,T ~0)) %>%
+  dplyr::distinct(hous_id,trimestre, ano,pobre) %>%
+  dplyr::group_by(hous_id) %>% 
+  dplyr::summarise(n = sum(pobre, na.rm = T)) %>% 
+  dplyr::mutate(classe = case_when(n == 4 ~ 'Sempre Pobre',
+                                   n == 0 ~ 'Nunca Pobre',
+                                   n == 3 ~ 'Usualmente Pobre',
+                                   n == 2 ~ 'Chuming Poor',
+                                   n == 1 ~ 'Ocasionalmente Pobre'))
+
+dinamica <-  base_sergipe_longa %>%
+  add_count(classe) %>% 
+  distinct(classe, nn) %>% 
+  ggplot(mapping = aes(x = classe, y = nn, fill = classe))+
+  geom_bar(stat = 'identity')+
+  scale_fill_manual(values = c("#FAD510","#cf3a36", "#F8AFA8", "#E2D200","#0B775E"))+
+  labs(y = 'Quantidade de Domicílios', x='', fill = '',
+       title = 'Categorização da Dinâmica da Pobreza\n (Renda Per capita Média da População\n de Sergipe em reais de 2018Q4)') +
+  theme_minimal()
+
+ggsave(dinamica,
+       filename = 'Distribuição de Renda/Trabalho/output/dinamica.png',
+       width = 25, height = 15, device = 'png', bg = 'white',
+       units = 'cm')
 
 # 4. ------------------------------------------------------------------------------
 # 5. ------------------------------------------------------------------------------
