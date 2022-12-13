@@ -14,6 +14,7 @@ xfun::pkg_attach(c('tidyverse','purrr','haven','survey', 'srvyr','convey', 'PNAD
 pnad_2018 <- 'Distribuição de Renda/Trabalho/input/PNADC2018/PNADC2018.dta'
 deflator <- readr::read_csv('Distribuição de Renda/Trabalho/input/deflator.csv') %>% 
   dplyr::mutate(trimestre = as.character(trimestre))
+
 ## 1.1 Base Pacote IBGE ---------------------------------------------------------
 
 func_ibge <- function(trimestre){get_pnadc(year = 2018,
@@ -273,15 +274,20 @@ ggsave(graph_sexo_sergipe,
        units = 'cm')
 
 # 3. Pobreza: Dinâmica da Pobreza ----------------------------------------------
+
+## 3.1. Definir domicílios acompanhados ao longo dos trimestres ----------------
 dom <- base_pnad_sergipe %>%
   as_survey %>%
   srvyr::as_tibble() %>%
+  dplyr::filter(is.nan(renda_pc_def) == F) %>% 
   distinct(hous_id,trimestre) %>% 
   dplyr::add_count(hous_id) %>% 
   dplyr::distinct(hous_id, n) %>% 
   dplyr::filter(n ==4)
 
-base_sergipe_longa <- base_pnad_sergipe %>% 
+## 3.2. Dinâmica da Pobreza com Renda Média ------------------------------------
+
+base_dinamica_renda_media <- base_pnad_sergipe %>% 
   as_survey %>%
   srvyr::as_tibble() %>%
   dplyr::right_join(dom, by = 'hous_id') %>%
@@ -292,23 +298,94 @@ base_sergipe_longa <- base_pnad_sergipe %>%
   dplyr::mutate(classe = case_when(n == 4 ~ 'Sempre Pobre',
                                    n == 0 ~ 'Nunca Pobre',
                                    n == 3 ~ 'Usualmente Pobre',
-                                   n == 2 ~ 'Chuming Poor',
+                                   n == 2 ~ 'Ciclicamente Pobre',
                                    n == 1 ~ 'Ocasionalmente Pobre'))
 
-dinamica <-  base_sergipe_longa %>%
+dinamica_renda_media <-  base_dinamica_renda_media %>%
   add_count(classe) %>% 
   distinct(classe, nn) %>% 
-  ggplot(mapping = aes(x = classe, y = nn, fill = classe))+
+  dplyr::mutate(perc = nn*100/746) %>% 
+  ggplot(mapping = aes(x = classe, y = perc, fill = classe))+
   geom_bar(stat = 'identity')+
   scale_fill_manual(values = c("#FAD510","#cf3a36", "#F8AFA8", "#5c66a8","#0B775E"))+
-  labs(y = 'Quantidade de Domicílios', x='', fill = '',
+  labs(y = 'Porcentagem de Domicílios (%)', x='', fill = '',
        title = 'Categorização da Dinâmica da Pobreza\n (Renda Per capita Média da População de Sergipe em reais de 2018Q4)') +
-  theme_minimal()
+  theme_minimal() +
+  geom_text(aes(label= format(round(perc,3), nsmall=3)), position=position_dodge(width=0.9), vjust=-0.25)
 
-ggsave(dinamica,
+ggsave(dinamica_renda_media,
        filename = 'Distribuição de Renda/Trabalho/output/dinamica.png',
        width = 25, height = 15, device = 'png', bg = 'white',
        units = 'cm')
 
-# 4. ------------------------------------------------------------------------------
-# 5. ------------------------------------------------------------------------------
+## 3.3. Dinâmica da Pobreza com Banco Mundial ----------------------------------
+
+base_dinamica_renda_bm <- base_pnad_sergipe %>% 
+  as_survey %>%
+  srvyr::as_tibble() %>%
+  dplyr::right_join(dom, by = 'hous_id') %>%
+  dplyr::mutate(pobre  = case_when(renda_pc_def < 293.0085 ~ 1,T ~0)) %>%
+  dplyr::distinct(hous_id,trimestre, ano,pobre) %>%
+  dplyr::group_by(hous_id) %>% 
+  srvyr::summarise(n = sum(pobre, na.rm = T)) %>% 
+  dplyr::mutate(classe = case_when(n == 4 ~ 'Sempre Pobre',
+                                   n == 0 ~ 'Nunca Pobre',
+                                   n == 3 ~ 'Usualmente Pobre',
+                                   n == 2 ~ 'Ciclicamente Pobre',
+                                   n == 1 ~ 'Ocasionalmente Pobre'))
+
+dinamica_renda_bm <-  base_dinamica_renda_bm %>%
+  add_count(classe) %>% 
+  distinct(classe, nn) %>% 
+  dplyr::mutate(perc = nn*100/746) %>% 
+  ggplot(mapping = aes(x = classe, y = perc, fill = classe))+
+  geom_bar(stat = 'identity')+
+  scale_fill_manual(values = c("#FAD510","#cf3a36", "#F8AFA8", "#5c66a8","#0B775E"))+
+  labs(y = 'Porcentagem de Domicílios (%)', x='', fill = '',
+       title = 'Categorização da Dinâmica da Pobreza\n (Linha de Pobreza Banco Mundial USD$ 1.9 em reais de 2018Q4)') +
+  theme_minimal() +
+  geom_text(aes(label= format(round(perc,3), nsmall=3)), position=position_dodge(width=0.9), vjust=-0.25)
+
+
+ggsave(dinamica_renda_bm,
+       filename = 'Distribuição de Renda/Trabalho/output/dinamica_bm.png',
+       width = 25, height = 15, device = 'png', bg = 'white',
+       units = 'cm')
+
+# 4. Probabilidade de Entrada na Pobreza ---------------------------------------
+trimestre_1 <- base_pnad_sergipe %>% 
+  as_survey %>%
+  srvyr::as_tibble() %>%
+  srvyr::filter(trimestre == 1) %>% 
+  tidyr::pivot_wider(names_from = 'trimestre',
+                     names_prefix = 'renda_pc_def_',
+                     values_from = 'renda_pc_def')
+
+trimestre_4 <-base_pnad_sergipe %>% 
+  as_survey %>%
+  srvyr::as_tibble() %>%
+  srvyr::filter(trimestre == 4) %>% 
+  tidyr::pivot_wider(names_from = 'trimestre',
+                     names_prefix = 'renda_pc_def_',
+                     values_from = 'renda_pc_def') %>% 
+  dplyr::select(renda_pc_def_4, hous_id)
+
+
+reg <- trimestre_1 %>% 
+  left_join(trimestre_4, by = 'hous_id')%>% 
+  srvyr::mutate(pobre_4 = case_when(renda_pc_def_4 <  293.0085 ~ 1, T~0),
+              pobre_1 = case_when(renda_pc_def_1 <  293.0085 ~ 1, T ~0),
+              sexo_domicilio = case_when(v2007== 1 & v2005 == 1 ~ 1, T~0),
+              cor = case_when(v2010==1 ~ 1, T~ 0),
+              escolaridade = case_when(v3009a %in% c(1:8) ~ 1, T~0),
+              across(.cols = c(v1022, v3001), ~case_when(. == 1~ 0, . == 2 ~ 1,T ~.)))
+
+reg_income <- survey::svyglm(formula = renda_pc_def_4 ~ v2001 + sexo_domicilio + cor +
+                   escolaridade+  v1022 + v3001 + renda_pc_def_1, design =  reg)
+
+
+
+logit_income <- glm(formula = pobre_4 ~ v2001 + sexo_domicilio + cor +
+                               escolaridade+  v1022 + v3001 + pobre_1,data = reg,
+                    family = 'binomial')
+
