@@ -59,10 +59,10 @@ base_pnad_sergipe <- haven::read_dta(file = pnad_2018) %>%
   janitor::clean_names(.) %>% 
   dplyr::left_join(deflator, by = 'trimestre') %>% 
   dplyr::group_by(hous_id,trimestre,ano) %>%
-  dplyr::mutate(renda_dom_mensal = mean(vd4020, na.rm = T),
+  dplyr::mutate(renda_dom_mensal = sum(vd4020, na.rm = T),
                 membros = v2001,
                 renda_pc = (renda_dom_mensal/membros),
-                renda_dom_mensal_def = mean(vd4020, na.rm = T)*efetivo,
+                renda_dom_mensal_def = sum(vd4020, na.rm = T)*efetivo,
                 renda_pc_def = (renda_dom_mensal_def/membros)) %>%
   dplyr::ungroup() %>% 
   design_pnad_covid()
@@ -71,7 +71,7 @@ base_pnad_brasil <- haven::read_dta(file = pnad_2018) %>%
   tibble::as_tibble() %>%  
   janitor::clean_names(.) %>% 
   dplyr::group_by(hous_id,trimestre,ano) %>%
-  dplyr::mutate(renda_dom_mensal =mean(vd4020, na.rm = T),
+  dplyr::mutate(renda_dom_mensal =sum(vd4020, na.rm = T),
                 membros = v2001,
                 renda_pc = (renda_dom_mensal/membros)) %>%
   dplyr::ungroup() %>% 
@@ -154,7 +154,7 @@ ggsave(graph_media_brasil,
        units = 'cm')
 
 # 2.2. FGT pobreza monetária Banco Mundial -------------------------------------
-fgt_bm_sergipe <- fgt(base = base_pnad_sergipe, linha = 293.0085,local = 'Sergipe')
+fgt_bm_sergipe <- fgt(base = base_pnad_sergipe, linha = 208.2894,local = 'Sergipe')
 
 graph_bm_sergipe <- fgt_bm_sergipe %>% 
 ggplot2::ggplot(mapping = aes(x=medida, y=valor, fill= medida)) +
@@ -171,7 +171,7 @@ ggsave(graph_bm_sergipe,
        width = 25, height = 15, device = 'png', bg = 'white',
        units = 'cm')
 
-fgt_bm_brasil <- fgt(base = base_pnad_brasil, linha = 293.0085,local = 'Brasil') %>% 
+fgt_bm_brasil <- fgt(base = base_pnad_brasil, linha = 208.2894,local = 'Brasil') %>% 
   dplyr::bind_rows(fgt_bm_sergipe)
 
 graph_bm_brasil <- fgt_bm_brasil %>% 
@@ -192,13 +192,13 @@ ggsave(graph_bm_brasil,
 fgt_branco_sergipe <- base_pnad_sergipe %>% 
   as_survey(.) %>% 
   dplyr::filter(v2010==1) %>% 
-  fgt(base = ., linha = 293.0085,local = 'Sergipe') %>% 
+  fgt(base = ., linha = 208.2894,local = 'Sergipe') %>% 
   dplyr::mutate(var = 'Branco')
 
 fgt_nbranco_sergipe <- base_pnad_sergipe %>% 
   as_survey(.) %>% 
   dplyr::filter(v2010 !=1) %>% 
-  fgt(base = ., linha = 293.0085,local = 'Sergipe')%>% 
+  fgt(base = ., linha = 208.2894,local = 'Sergipe')%>% 
   dplyr::mutate(var = 'Não Branco')
 
 graph_cor_sergipe <- fgt_branco_sergipe %>% 
@@ -220,13 +220,13 @@ ggsave(graph_cor_sergipe,
 fgt_sabeler_sergipe <- base_pnad_sergipe %>% 
   as_survey(.) %>% 
   dplyr::filter(v3001== 1) %>% 
-  fgt(base = ., linha = 293.0085,local = 'Sergipe') %>% 
+  fgt(base = ., linha = 208.2894,local = 'Sergipe') %>% 
   dplyr::mutate(var = 'Sabe Ler')
 
 fgt_nsabeler_sergipe <- base_pnad_sergipe %>% 
   as_survey(.) %>% 
   dplyr::filter(v3001 == 2) %>% 
-  fgt(base = ., linha = 293.0085,local = 'Sergipe')%>% 
+  fgt(base = ., linha = 208.2894,local = 'Sergipe')%>% 
   dplyr::mutate(var = 'Não Sabe Ler')
 
 graph_ler_sergipe <- fgt_sabeler_sergipe %>% 
@@ -249,13 +249,13 @@ ggsave(graph_ler_sergipe,
 fgt_homem_sergipe <- base_pnad_sergipe %>% 
   as_survey(.) %>% 
   dplyr::filter(v2007== 1 & v2005 == 1) %>% 
-  fgt(base = ., linha = 293.0085,local = 'Sergipe') %>% 
+  fgt(base = ., linha = 208.2894,local = 'Sergipe') %>% 
   dplyr::mutate(var = 'Homem')
 
 fgt_mulher_sergipe <- base_pnad_sergipe %>% 
   as_survey(.) %>% 
   dplyr::filter(v2007== 2 & v2005 == 1) %>% 
-  fgt(base = ., linha = 293.0085,local = 'Sergipe')%>% 
+  fgt(base = ., linha = 208.2894,local = 'Sergipe')%>% 
   dplyr::mutate(var = 'Mulher')
 
 graph_sexo_sergipe <- fgt_homem_sergipe %>% 
@@ -324,7 +324,7 @@ base_dinamica_renda_bm <- base_pnad_sergipe %>%
   as_survey %>%
   srvyr::as_tibble() %>%
   dplyr::right_join(dom, by = 'hous_id') %>%
-  dplyr::mutate(pobre  = case_when(renda_pc_def < 293.0085 ~ 1,T ~0)) %>%
+  dplyr::mutate(pobre  = case_when(renda_pc_def < 208.2894 ~ 1,T ~0)) %>%
   dplyr::distinct(hous_id,trimestre, ano,pobre) %>%
   dplyr::group_by(hous_id) %>% 
   srvyr::summarise(n = sum(pobre, na.rm = T)) %>% 
@@ -373,19 +373,39 @@ trimestre_4 <-base_pnad_sergipe %>%
 
 reg <- trimestre_1 %>% 
   left_join(trimestre_4, by = 'hous_id')%>% 
-  srvyr::mutate(pobre_4 = case_when(renda_pc_def_4 <  293.0085 ~ 1, T~0),
-              pobre_1 = case_when(renda_pc_def_1 <  293.0085 ~ 1, T ~0),
+  srvyr::mutate(pobre_4 = case_when(renda_pc_def_4 <  208.2894 ~ 1, T~0),
+              pobre_1 = case_when(renda_pc_def_1 <  208.2894 ~ 1, T ~0),
               sexo_domicilio = case_when(v2007== 1 & v2005 == 1 ~ 1, T~0),
               cor = case_when(v2010==1 ~ 1, T~ 0),
               escolaridade = case_when(v3009a %in% c(1:8) ~ 1, T~0),
-              across(.cols = c(v1022, v3001), ~case_when(. == 1~ 0, . == 2 ~ 1,T ~.)))
+              across(.cols = c(v1022, v3001), ~case_when(. == 1~ 0, . == 2 ~ 1,T ~.)),
+              domicilio_rural = v1022,
+              n_sabe_ler=v3001,
+              num_pessoas = v2001)
 
 reg_income <- survey::svyglm(formula = renda_pc_def_4 ~ v2001 + sexo_domicilio + cor +
                    escolaridade+  v1022 + v3001 + renda_pc_def_1, design =  reg)
 
 
 
-logit_income <- glm(formula = pobre_4 ~ v2001 + sexo_domicilio + cor +
-                               escolaridade+  v1022 + v3001 + pobre_1,data = reg,
+logit_income <- glm(formula = pobre_4 ~ num_pessoas + sexo_domicilio + cor +
+                               escolaridade+  domicilio_rural + n_sabe_ler + pobre_1,data = reg,
                     family = 'binomial')
 
+
+des <- base_pnad_sergipe %>% 
+  as_survey() %>% 
+  as_tibble() %>%
+  filter(trimestre ==1 & v2005 == 1) %>%
+  distinct(ind_id, .keep_all = T) %>% 
+  ggplot(., aes(x=renda_pc/1000)) + 
+  geom_density(fill="#F8AFA8") +
+  labs(x = 'Rendimento bruto mensal', y='', fill = '',
+       title = 'Densidade de renda per capita 20181Q (em milhares)') +
+  scale_x_continuous(breaks = 0:30)+
+  theme_minimal()
+
+ggsave(des,
+       filename = 'Distribuição de Renda/Trabalho/output/densidade.png',
+       width = 25, height = 20, device = 'png', bg = 'white',
+       units = 'cm')
